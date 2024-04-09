@@ -1,5 +1,5 @@
 # gsm
-git ssh manager - select witch ssh identity use for git 
+git ssh manager - tell git which private key to use 
 
 # what is it?
 > I created this tool because I needed to use different ssh keys to access git repositories

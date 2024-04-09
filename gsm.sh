@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 GSM_DIR=~/.gsm;
-GSM_FILE=config;
-CONFIG_FILE=$GSM_DIR/$GSM_FILE;
+CONFIG_FILE=$GSM_DIR/config;
 # associative array with paths to ssh keys
+# actual values read and saved to $CONFIG_FILE
 declare -A IDS;
 
-
-
 read_config (){
-source $CONFIG_FILE;
+  source $CONFIG_FILE;
 }
-
 
 init(){
   # create settings file if doesn't exists
@@ -38,19 +35,34 @@ read_config
 # $1 - name
 # $2 - ssh key file path
 add(){
-if [[ -n "${IDS["$1"]}" ]];then
-  echo "Identity with name $1 already added. Use different name."
-  exit 1;
-fi
-IDS["$1"]="$2";
-update_config
+  if [[ ! -f $2 ]];then
+  echo "File $2 doesn't exist."
+    exit 1;
+  fi
+
+  if [[ -n "${IDS["$1"]}" ]];then
+    echo "Identity with name $1 already added. Use different name."
+    exit 1;
+  fi
+  IDS["$1"]="$2";
+  update_config
 }
 
+reset(){
+  git config --global --unset core.sshCommand
+}
 
 list (){
+  currentKey=`git config --global  --get core.sshCommand |  rev | cut -d" " -f 1 | rev`;
+
   for key in "${!IDS[@]}"
   do
-    echo "${key} ${IDS[${key}]}"
+    val=${IDS[${key}]};
+    if [[ $currentKey == $val ]];then
+    echo "* ${key} ${val}"
+    else
+      echo "${key} ${val}"
+    fi
   done
 }
 
@@ -66,6 +78,10 @@ use(){
 
 # $1 - identity key
 remove (){
+  currentKey=`git config --global  --get core.sshCommand |  rev | cut -d" " -f 1 | rev`;
+  if [[ $currentKey == ${IDS[$1]} ]];then
+    reset
+  fi
 unset 'IDS[$1]'
 update_config
 }
